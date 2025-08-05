@@ -1,0 +1,46 @@
+body {
+  font-family: monospace;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+}
+
+header {
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  font-weight: bold;
+}
+
+#topbar {
+  margin-bottom: 10px;
+}
+
+#grid {
+  display: grid;
+  border: 1px solid black;
+  background: white;
+}
+
+.cell {
+  border: 1px solid #eee;
+  background-color: white;
+}
+
+#toolbar {
+  margin-top: 10px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button,
+input[type="color"] {
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 5px 10px;
+}
