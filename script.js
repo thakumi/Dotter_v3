@@ -39,6 +39,28 @@ function resizePixelDataCenter(newCount) {
   pixelData = newData;
 }
 
+document.getElementById('saveSvg').onclick = () => {
+  const cellSize = CANVAS_SIZE / gridCount; // 今のキャンバスサイズ基準
+  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_SIZE}" height="${CANVAS_SIZE}">`;
+
+  for (let r = 0; r < gridCount; r++) {
+    for (let c = 0; c < gridCount; c++) {
+      const fill = pixelData[r][c];
+      if (fill !== 'white' && fill !== '') {
+        svgContent += `<rect x="${c * cellSize}" y="${r * cellSize}" width="${cellSize}" height="${cellSize}" fill="${fill}" />`;
+      }
+    }
+  }
+
+  svgContent += '</svg>';
+
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'pixel_art.svg';
+  link.click();
+};
+
 function renderGrid() {
   gridElement.innerHTML = '';
   gridElement.style.width = `${CANVAS_SIZE}px`;
@@ -202,27 +224,7 @@ gridCountInput.addEventListener('change', () => {
   renderGrid();
 });
 
-document.getElementById('saveSvg').onclick = () => {
-  const cellSize = 20; // px
-  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${gridSize * cellSize}" height="${gridSize * cellSize}">`;
 
-  [...grid.children].forEach((cell, i) => {
-    const color = cell.style.backgroundColor || 'white';
-    const row = Math.floor(i / gridSize);
-    const col = i % gridSize;
-    if (color !== 'white' && color !== '') {
-      svgContent += `<rect x="${col * cellSize}" y="${row * cellSize}" width="${cellSize}" height="${cellSize}" fill="${color}" />`;
-    }
-  });
-
-  svgContent += '</svg>';
-
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'pixel_art.svg';
-  link.click();
-};
 
 initPixelData(gridCount);
 renderGrid();
