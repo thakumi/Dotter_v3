@@ -20,29 +20,34 @@
   <header>memepxl_dotter</header>
 
   <div id="topbar">
-    <input id="gridCount" type="number" value="15" min="1" max="100">
+    <input id="gridCount" type="number" value="10" min="1" max="100">
     <span>×</span>
-    <span id="gridCountLabel">15</span>
+    <span id="gridCountLabel">10</span>
   </div>
 
   <div id="mainArea">
-    <div id="canvasWrapper">
-      <div id="grid"></div>
-      <div id="hoverBox"></div>
-    </div>
-    <div id="colorHistory"></div>
+  <div id="canvasWrapper">
+    <div id="grid"></div>
+    <div id="hoverBox"></div>
+    <div id="colorHistory"></div> <!-- ここに移動 -->
   </div>
+</div>
 
-  <div id="toolbar">
-    <button id="eraser">ERASER</button>
-    <button id="pen">DOTTER</button>
-    <button id="dotSize">1x</button>
-    <input type="color" id="colorPicker" value="#000000">
-    <button id="undo">UNDO</button>
-    <button id="redo">PREV</button>
-    <button id="clear">ALL CLEAR</button>
-    <button id="saveSvg">SAVE SVG</button>
-  </div>
+<div id="toolbar">
+  <button id="pen"></button>
+  <button id="eraser"></button>
+  <button id="dotSize"></button>
+  <input type="color" id="colorPicker" style="display:none;" value="#000000">
+  <button id="colorPickerBtn"></button>
+  <button id="undo"></button>
+  <button id="redo"></button>
+  <button id="clear"></button>
+  <button id="saveSvg"></button>
+  <input type="file" id="importSvg" accept=".svg" style="display:none;">
+<button id="importSvgBtn"></button>
+
+</div>
+
 
   <script src="script.js"></script>
 </body>

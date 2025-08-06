@@ -1,4 +1,7 @@
-let gridCount = 25;
+// =========================================
+// 基本変数
+// =========================================
+let gridCount = 10;
 let tool = 'pen';
 let dotSize = 1;
 let color = '#000000';
@@ -13,6 +16,10 @@ const hoverBox = document.getElementById('hoverBox');
 const gridCountInput = document.getElementById('gridCount');
 const gridCountLabel = document.getElementById('gridCountLabel');
 const colorHistoryElement = document.getElementById('colorHistory');
+const hiddenColorPicker = document.getElementById('colorPicker');
+const colorPickerBtn = document.getElementById('colorPickerBtn');
+const importSvgInput = document.getElementById('importSvg');
+const importSvgBtn = document.getElementById('importSvgBtn');
 
 const CANVAS_SIZE = 500;
 
@@ -20,6 +27,63 @@ const CANVAS_SIZE = 500;
 let hoverTarget = { x: 0, y: 0, w: 0, h: 0, visible: false };
 let hoverCurrent = { x: 0, y: 0, w: 0, h: 0 };
 
+// =========================================
+// SVGアイコン読み込み（CSSボタンサイズに合わせて自動フィット）
+// =========================================
+function loadSVG(buttonId, svgPath) {
+  fetch(svgPath)
+    .then(res => res.text())
+    .then(svgText => {
+      const wrapper = document.getElementById(buttonId);
+      wrapper.innerHTML = svgText;
+
+      const svgEl = wrapper.querySelector('svg');
+      if (svgEl) {
+        svgEl.removeAttribute('width');
+        svgEl.removeAttribute('height');
+
+        if (!svgEl.getAttribute('viewBox')) {
+          try {
+            const bbox = svgEl.getBBox();
+            svgEl.setAttribute(
+              'viewBox',
+              `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`
+            );
+          } catch (e) {
+            console.warn(`BBox取得失敗: ${svgPath}`);
+          }
+        }
+
+        const btnSize = wrapper.getBoundingClientRect().width;
+        svgEl.style.width = `${btnSize * 0.6}px`;
+        svgEl.style.height = `${btnSize * 0.6}px`;
+        svgEl.style.display = 'block';
+      }
+    })
+    .catch(err => console.error(`SVG読み込み失敗: ${svgPath}`, err));
+}
+
+// アイコン設定
+const iconMap = {
+  pen: 'icons/pen.svg',
+  eraser: 'icons/eraser.svg',
+  dotSize: 'icons/eraser.svg',
+  colorPickerBtn: 'icons/color.svg',
+  undo: 'icons/undo.svg',
+  redo: 'icons/redo.svg',
+  clear: 'icons/clear.svg',
+  saveSvg: 'icons/save.svg',
+   importSvgBtn: 'icons/load.svg' // ← 追加
+};
+
+// ページ読み込み時に全アイコン読込
+window.addEventListener('DOMContentLoaded', () => {
+  Object.entries(iconMap).forEach(([id, path]) => loadSVG(id, path));
+});
+
+// =========================================
+// 基本関数
+// =========================================
 function initPixelData(count) {
   pixelData = Array.from({ length: count }, () => Array(count).fill('white'));
 }
@@ -39,8 +103,11 @@ function resizePixelDataCenter(newCount) {
   pixelData = newData;
 }
 
+// =========================================
+// SAVE SVG
+// =========================================
 document.getElementById('saveSvg').onclick = () => {
-  const cellSize = CANVAS_SIZE / gridCount; // 今のキャンバスサイズ基準
+  const cellSize = CANVAS_SIZE / gridCount;
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_SIZE}" height="${CANVAS_SIZE}">`;
 
   for (let r = 0; r < gridCount; r++) {
@@ -61,12 +128,68 @@ document.getElementById('saveSvg').onclick = () => {
   link.click();
 };
 
+// =========================================
+// IMPORT SVG（gridCount自動反映）
+// =========================================
+importSvgBtn.addEventListener('click', () => {
+  importSvgInput.click();
+});
+
+importSvgInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(reader.result, 'image/svg+xml');
+    const rects = svgDoc.querySelectorAll('rect');
+
+    if (rects.length === 0) {
+      alert('このSVGにはrect要素が見つかりません。');
+      return;
+    }
+
+    // rectサイズからgridCount計算
+    let cellSize = parseFloat(rects[0].getAttribute('width')) || 1;
+    let newGridCount = Math.round(CANVAS_SIZE / cellSize);
+
+    // gridCount反映
+    gridCount = newGridCount;
+    gridCountInput.value = newGridCount;
+    gridCountLabel.textContent = newGridCount;
+
+    // pixelData初期化
+    pixelData = Array.from({ length: gridCount }, () => Array(gridCount).fill('white'));
+
+    // rect情報反映
+    rects.forEach(rect => {
+      const x = parseFloat(rect.getAttribute('x'));
+      const y = parseFloat(rect.getAttribute('y'));
+      const fill = rect.getAttribute('fill') || '#000';
+      const col = Math.round(x / cellSize);
+      const row = Math.round(y / cellSize);
+      if (row >= 0 && row < gridCount && col >= 0 && col < gridCount) {
+        pixelData[row][col] = fill;
+      }
+    });
+
+    renderGrid();
+  };
+
+  reader.readAsText(file);
+});
+
+// =========================================
+// グリッド描画
+// =========================================
 function renderGrid() {
   gridElement.innerHTML = '';
   gridElement.style.width = `${CANVAS_SIZE}px`;
   gridElement.style.height = `${CANVAS_SIZE}px`;
   gridElement.style.gridTemplateColumns = `repeat(${gridCount}, 1fr)`;
   gridElement.style.gridTemplateRows = `repeat(${gridCount}, 1fr)`;
+
   for (let r = 0; r < gridCount; r++) {
     for (let c = 0; c < gridCount; c++) {
       const cell = document.createElement('div');
@@ -94,6 +217,9 @@ function renderGrid() {
   }
 }
 
+// =========================================
+// 描画処理
+// =========================================
 function draw(row, col) {
   const startRow = row - Math.floor(dotSize / 2);
   const startCol = col - Math.floor(dotSize / 2);
@@ -115,6 +241,9 @@ function draw(row, col) {
   if (tool === 'pen') updateColorHistory();
 }
 
+// =========================================
+// Undo / Redo
+// =========================================
 function saveHistory() {
   undoStack.push(JSON.stringify(pixelData));
   redoStack = [];
@@ -136,6 +265,9 @@ function redo() {
   }
 }
 
+// =========================================
+// Hover Box
+// =========================================
 function updateHoverTarget(row, col) {
   const rect = gridElement.getBoundingClientRect();
   const cellSize = rect.width / gridCount;
@@ -150,7 +282,7 @@ function updateHoverTarget(row, col) {
 }
 
 function animateHoverBox() {
-  const ease = 0.1; // ゆっくりに
+  const ease = 0.1;
   hoverCurrent.x += (hoverTarget.x - hoverCurrent.x) * ease;
   hoverCurrent.y += (hoverTarget.y - hoverCurrent.y) * ease;
   hoverCurrent.w += (hoverTarget.w - hoverCurrent.w) * ease;
@@ -172,6 +304,9 @@ function hideHoverBox() {
   hoverTarget.visible = false;
 }
 
+// =========================================
+// カラー履歴
+// =========================================
 function updateColorHistory() {
   if (!colorHistory.includes(color)) {
     colorHistory.unshift(color);
@@ -187,18 +322,20 @@ function renderColorHistory() {
     sw.style.backgroundColor = c;
     sw.addEventListener('click', () => {
       color = c;
-      document.getElementById('colorPicker').value = c;
+      hiddenColorPicker.value = c;
     });
     colorHistoryElement.appendChild(sw);
   });
 }
 
+// =========================================
+// イベント
+// =========================================
 gridElement.addEventListener('mouseleave', hideHoverBox);
 document.addEventListener('mouseup', () => { isDrawing = false; });
 
 document.getElementById('pen').onclick = () => tool = 'pen';
 document.getElementById('eraser').onclick = () => tool = 'eraser';
-document.getElementById('colorPicker').oninput = e => color = e.target.value;
 document.getElementById('dotSize').onclick = () => {
   dotSize = dotSize % 5 + 1;
   document.getElementById('dotSize').innerText = dotSize + 'x';
@@ -210,6 +347,16 @@ document.getElementById('clear').onclick = () => {
   pixelData = pixelData.map(r => r.map(() => 'white'));
   renderGrid();
 };
+
+// カラーピッカー
+colorPickerBtn.addEventListener('click', () => {
+  hiddenColorPicker.click();
+});
+hiddenColorPicker.addEventListener('input', e => {
+  color = e.target.value;
+});
+
+// グリッドサイズ変更
 gridCountInput.addEventListener('keydown', e => {
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
 });
@@ -224,8 +371,9 @@ gridCountInput.addEventListener('change', () => {
   renderGrid();
 });
 
-
-
+// =========================================
+// 初期化
+// =========================================
 initPixelData(gridCount);
 renderGrid();
 animateHoverBox();
