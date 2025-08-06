@@ -55,19 +55,41 @@ function loadSVG(buttonId, svgPath) {
         }
 
         const btnSize = wrapper.getBoundingClientRect().width;
-        svgEl.style.width = `${btnSize * 0.6}px`;
-        svgEl.style.height = `${btnSize * 0.6}px`;
+        svgEl.style.width = `${btnSize * 1}px`;
+        svgEl.style.height = `${btnSize * 1}px`;
         svgEl.style.display = 'block';
+
+        // ====== ここから Hover アニメーション設定 ======
+        wrapper.addEventListener('mouseenter', () => {
+          const rects = Array.from(svgEl.querySelectorAll('rect'));
+          if (rects.length === 0) return;
+
+          // 一旦全部非表示（透明）
+          rects.forEach(r => r.style.opacity = 0);
+
+          // ランダム順に並び替え
+          const shuffled = rects.sort(() => Math.random() - 0.5);
+
+          // 順番に表示
+          shuffled.forEach((rect, i) => {
+            setTimeout(() => {
+              rect.style.transition = 'opacity 0.01s ease';
+              rect.style.opacity = 1;
+            }, i * 9); // 50ms間隔で1つずつ
+          });
+        });
+        // ====== ここまで ======
       }
     })
     .catch(err => console.error(`SVG読み込み失敗: ${svgPath}`, err));
 }
 
+
 // アイコン設定
 const iconMap = {
   pen: 'icons/pen.svg',
   eraser: 'icons/eraser.svg',
-  dotSize: 'icons/eraser.svg',
+  dotSize: 'icons/size.svg',
   colorPickerBtn: 'icons/color.svg',
   undo: 'icons/undo.svg',
   redo: 'icons/redo.svg',
@@ -352,8 +374,17 @@ document.getElementById('clear').onclick = () => {
 colorPickerBtn.addEventListener('click', () => {
   hiddenColorPicker.click();
 });
+
 hiddenColorPicker.addEventListener('input', e => {
   color = e.target.value;
+
+  // color.svgアイコンの塗りを変更
+  const svgEl = document.querySelector('#colorPickerBtn svg');
+  if (svgEl) {
+    svgEl.querySelectorAll('[fill]').forEach(el => {
+      el.setAttribute('fill', color);
+    });
+  }
 });
 
 // グリッドサイズ変更
