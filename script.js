@@ -202,6 +202,28 @@ gridCountInput.addEventListener('change', () => {
   renderGrid();
 });
 
+document.getElementById('saveSvg').onclick = () => {
+  const cellSize = 20; // px
+  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${gridSize * cellSize}" height="${gridSize * cellSize}">`;
+
+  [...grid.children].forEach((cell, i) => {
+    const color = cell.style.backgroundColor || 'white';
+    const row = Math.floor(i / gridSize);
+    const col = i % gridSize;
+    if (color !== 'white' && color !== '') {
+      svgContent += `<rect x="${col * cellSize}" y="${row * cellSize}" width="${cellSize}" height="${cellSize}" fill="${color}" />`;
+    }
+  });
+
+  svgContent += '</svg>';
+
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'pixel_art.svg';
+  link.click();
+};
+
 initPixelData(gridCount);
 renderGrid();
 animateHoverBox();
